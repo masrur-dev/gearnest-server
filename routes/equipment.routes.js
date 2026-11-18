@@ -5,7 +5,11 @@ import { getDB } from "../config/db.js";
 
 const router = Router();
 
+// ========================================
 // GET ALL APPROVED EQUIPMENT
+// Search, Filter, Sort
+// ========================================
+
 router.get("/", async (req, res) => {
   try {
     const collection = getDB().collection("equipment");
@@ -20,7 +24,9 @@ router.get("/", async (req, res) => {
       maxPrice,
     } = req.query;
 
-    const filter = { status: "approved" };
+    const filter = {
+      status: "approved",
+    };
 
     // Search by equipment name or location
     if (typeof search === "string" && search.trim()) {
@@ -30,40 +36,67 @@ router.get("/", async (req, res) => {
         .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
       filter.$or = [
-        { name: { $regex: safeSearch, $options: "i" } },
-        { location: { $regex: safeSearch, $options: "i" } },
+        {
+          name: {
+            $regex: safeSearch,
+            $options: "i",
+          },
+        },
+        {
+          location: {
+            $regex: safeSearch,
+            $options: "i",
+          },
+        },
       ];
     }
 
-    // Category filter
+    // Filter by category
     if (typeof category === "string" && category) {
       filter.category = category;
     }
 
-    // Rental type filter
+    // Filter by rental type
+    const allowedRentalTypes = [
+      "Daily",
+      "Weekly",
+      "Monthly",
+    ];
+
     if (
       typeof rentalType === "string" &&
-      ["Daily", "Weekly", "Monthly"].includes(rentalType)
+      allowedRentalTypes.includes(rentalType)
     ) {
       filter.rentalType = rentalType;
     }
 
-    // Availability filter
+    // Filter by availability
     if (availability === "available") {
-      filter.availableQuantity = { $gt: 0 };
+      filter.availableQuantity = {
+        $gt: 0,
+      };
     }
 
     if (availability === "unavailable") {
-      filter.availableQuantity = { $lte: 0 };
+      filter.availableQuantity = {
+        $lte: 0,
+      };
     }
 
-    // Price range filter
-    if (minPrice !== undefined || maxPrice !== undefined) {
+    // Filter by price range
+    if (
+      minPrice !== undefined ||
+      maxPrice !== undefined
+    ) {
       const min =
-        minPrice === undefined ? 0 : Number(minPrice);
+        minPrice === undefined
+          ? 0
+          : Number(minPrice);
 
       const max =
-        maxPrice === undefined ? Infinity : Number(maxPrice);
+        maxPrice === undefined
+          ? Infinity
+          : Number(maxPrice);
 
       if (
         !Number.isFinite(min) ||
@@ -79,15 +112,23 @@ router.get("/", async (req, res) => {
 
       filter.rentalPrice = {
         $gte: min,
-        ...(Number.isFinite(max) ? { $lte: max } : {}),
+        ...(Number.isFinite(max)
+          ? { $lte: max }
+          : {}),
       };
     }
 
-    // Sorting
+    // Equipment sorting
     const sortOptions = {
-      price_asc: { rentalPrice: 1 },
-      price_desc: { rentalPrice: -1 },
-      newest: { createdAt: -1 },
+      price_asc: {
+        rentalPrice: 1,
+      },
+      price_desc: {
+        rentalPrice: -1,
+      },
+      newest: {
+        createdAt: -1,
+      },
     };
 
     const sortBy =
@@ -95,13 +136,14 @@ router.get("/", async (req, res) => {
         ? sortOptions[sort]
         : sortOptions.newest;
 
+    // Fetch approved equipment
     const equipment = await collection
       .find(filter)
       .sort(sortBy)
       .limit(50)
       .toArray();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: equipment.length,
       data: equipment,
@@ -109,18 +151,22 @@ router.get("/", async (req, res) => {
   } catch (error) {
     console.error("Equipment API Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch equipment",
     });
   }
 });
 
+// ========================================
 // GET SINGLE APPROVED EQUIPMENT
+// ========================================
+
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Validate MongoDB ObjectId
     if (!/^[a-fA-F0-9]{24}$/.test(id)) {
       return res.status(400).json({
         success: false,
@@ -142,16 +188,19 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: equipment,
     });
   } catch (error) {
-    console.error("Equipment Details Error:", error);
+    console.error(
+      "Equipment Details API Error:",
+      error
+    );
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to fetch equipment",
+      message: "Failed to fetch equipment details",
     });
   }
 });
