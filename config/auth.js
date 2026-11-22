@@ -31,6 +31,16 @@ export function createAuth(db) {
     baseURL: rawBaseURL,
     secret: process.env.BETTER_AUTH_SECRET,
 
+    advanced: {
+  defaultCookieAttributes: {
+    sameSite: AUTH_ORIGIN.startsWith("https://")
+      ? "none"
+      : "lax",
+    secure: AUTH_ORIGIN.startsWith("https://"),
+    httpOnly: true,
+  },
+},
+
     database: mongodbAdapter(db),
 
     trustedOrigins: [
