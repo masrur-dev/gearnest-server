@@ -22,6 +22,8 @@ router.get("/", async (req, res) => {
       sort = "newest",
       minPrice,
       maxPrice,
+      page,
+      limit,
     } = req.query;
 
     const filter = {
@@ -136,16 +138,37 @@ router.get("/", async (req, res) => {
         ? sortOptions[sort]
         : sortOptions.newest;
 
+    // Pagination (defaults keep the original 50 item cap)
+    const pageNum = Math.max(
+      1,
+      Number.parseInt(page, 10) || 1
+    );
+
+    const limitNum = Math.min(
+      50,
+      Math.max(
+        1,
+        Number.parseInt(limit, 10) || 50
+      )
+    );
+
+    const total = await collection.countDocuments(filter);
+
     // Fetch approved equipment
     const equipment = await collection
       .find(filter)
       .sort(sortBy)
-      .limit(50)
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
       .toArray();
 
     return res.status(200).json({
       success: true,
       count: equipment.length,
+      total,
+      page: pageNum,
+      limit: limitNum,
+      pages: Math.max(1, Math.ceil(total / limitNum)),
       data: equipment,
     });
   } catch (error) {
