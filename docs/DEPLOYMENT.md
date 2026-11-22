@@ -8,8 +8,9 @@
 | `CLIENT_URL` | yes | frontend origin — CORS allow-list + Better Auth `trustedOrigins` |
 | `MONGODB_URI` | yes | production MongoDB Atlas connection string |
 | `DB_NAME` | yes | `gearnestDB` |
-| `BETTER_AUTH_URL` | yes | **public API base URL** (local `http://localhost:5000`, prod `https://your-api-domain.tld`) — also the JWT issuer/audience |
+| `BETTER_AUTH_URL` | yes | Better Auth public base URL (local `http://localhost:5000`; prod frontend origin) — also the JWT issuer/audience |
 | `BETTER_AUTH_SECRET` | yes | long random string (Better Auth signing secret) |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | for GitHub OAuth | GitHub OAuth application credentials |
 | `STRIPE_SECRET_KEY` | for payments | Stripe **test-mode** secret; endpoints answer 503 without it |
 | `STRIPE_WEBHOOK_SECRET` | for payments | `whsec_...` from `stripe listen` / dashboard endpoint |
 | `PAYMENT_SUCCESS_PATH` / `PAYMENT_CANCEL_PATH` | no | frontend redirect paths (defaults `/payment/success`, `/payment/cancel`) |
@@ -35,7 +36,12 @@ npm run test:webhook    # signed webhook suite
 
 - `api/index.js` mounts the shared Express app; `vercel.json` rewrites all paths to it.
 - Set every required variable above in the Vercel project (production scope).
-- `BETTER_AUTH_URL` must equal the deployed API origin, `CLIENT_URL` the deployed frontend origin.
+- Set `CLIENT_URL` and `BETTER_AUTH_URL` to `https://gearnest-client-rouge.vercel.app`.
+- On the frontend Vercel project, set `NEXT_PUBLIC_API_URL=https://gearnest-server-seven.vercel.app` and `NEXT_PUBLIC_AUTH_URL=https://gearnest-client-rouge.vercel.app`.
+- Next.js proxies `/api/auth/*` to `NEXT_PUBLIC_API_URL`. Browser booking and payment API calls continue to use the backend URL.
+- Set the GitHub OAuth application's callback URL to `https://gearnest-client-rouge.vercel.app/api/auth/callback/github`.
+- Auth cookies are `Secure`, `HttpOnly`, and `SameSite=Lax` in production. Do not configure cross-site cookies or disable state/CSRF validation.
+- `BETTER_AUTH_URL` is also the JWT issuer and audience. JWT verification and the JWKS endpoint remain enabled; users may need to sign in again after changing the issuer.
 - The app builds once per cold start and reuses the Mongo client across warm invocations.
 
 ## Stripe webhook
@@ -58,7 +64,7 @@ npm run test:webhook    # signed webhook suite
 ## Production checklist
 
 - [ ] Atlas IP allow-list / network access for the host
-- [ ] `BETTER_AUTH_URL` + `CLIENT_URL` set to real https origins
+- [ ] `BETTER_AUTH_URL` + `CLIENT_URL` set to the frontend origin and frontend `NEXT_PUBLIC_AUTH_URL` / `NEXT_PUBLIC_API_URL` configured
 - [ ] CORS and Better Auth `trustedOrigins` cover exactly the frontend domain
 - [ ] Stripe test keys + webhook secret set; webhook endpoint registered
 - [ ] `npm run setup` run once against the production database
