@@ -21,6 +21,45 @@ export function getStripe() {
   return new Stripe(key);
 }
 
+export async function retireOpenCheckoutSession(
+  stripe,
+  sessionId
+) {
+  let expirationError = null;
+
+  try {
+    const result =
+      await stripe.checkout.sessions.expire(sessionId);
+
+    if (
+      result.status === "expired" ||
+      result.status === "complete"
+    ) {
+      return result.status;
+    }
+  } catch (error) {
+    expirationError = error;
+  }
+
+  const current =
+    await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (
+    current.status === "expired" ||
+    current.status === "complete"
+  ) {
+    return current.status;
+  }
+
+  if (expirationError) {
+    throw expirationError;
+  }
+
+  throw new Error(
+    "Checkout Session remains open after expiration request"
+  );
+}
+
 export function amountInCents(booking) {
   const amount = Math.round(
     Number(booking.totalAmount) * 100

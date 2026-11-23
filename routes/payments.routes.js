@@ -6,6 +6,7 @@ import {
   getStripe,
   amountInCents,
   settlePaidSession,
+  retireOpenCheckoutSession,
 } from "../services/stripe-services.js";
 
 const COLLECTION = "booking";
@@ -166,18 +167,49 @@ export function createPaymentRouter({
               });
             }
 
-            // Unusable session (expired state, amount or
-            // currency changed): retire it before a new one.
+            // Never create a replacement while the old session
+            // might still accept payment.
             if (existing.status === "open") {
-              await stripe.checkout.sessions
-                .expire(existing.id)
-                .catch(() => {});
+              let retirement;
+
+              try {
+                retirement =
+                  await retireOpenCheckoutSession(
+                    stripe,
+                    existing.id
+                  );
+              } catch (error) {
+                console.error(
+                  "Checkout session retirement failed:",
+                  error?.message
+                );
+
+                return res.status(503).json({
+                  success: false,
+                  message:
+                    "Could not safely replace the existing checkout session. Please retry.",
+                });
+              }
+
+              if (retirement === "complete") {
+                return res.status(409).json({
+                  success: false,
+                  message:
+                    "Payment session was already completed. Check payment status before retrying.",
+                });
+              }
             }
           } catch (error) {
             console.error(
-              "Existing session lookup:",
-              error.message
+              "Existing checkout session could not be verified:",
+              error?.message
             );
+
+            return res.status(503).json({
+              success: false,
+              message:
+                "Could not verify the existing checkout session. Please retry.",
+            });
           }
         }
 
@@ -235,9 +267,32 @@ export function createPaymentRouter({
         );
 
         if (result.matchedCount === 0) {
-          await stripe.checkout.sessions
-            .expire(session.id)
-            .catch(() => {});
+          try {
+            const retirement =
+              await retireOpenCheckoutSession(
+                stripe,
+                session.id
+              );
+
+            if (retirement !== "expired") {
+              return res.status(503).json({
+                success: false,
+                message:
+                  "Booking changed while payment completed. Check payment status before retrying.",
+              });
+            }
+          } catch (error) {
+            console.error(
+              "Unattached checkout session retirement failed:",
+              error?.message
+            );
+
+            return res.status(503).json({
+              success: false,
+              message:
+                "Booking changed and the checkout session could not be safely retired.",
+            });
+          }
 
           return res.status(409).json({
             success: false,
