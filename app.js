@@ -13,6 +13,7 @@ import {
 
 import { connectDB, getDB } from "./config/db.js";
 import { createAuth } from "./config/auth.js";
+import { validateEnvironment } from "./config/validate-env.js";
 import { verifyToken } from "./middleware/auth.middleware.js";
 
 import equipmentApprovalRoutes from "./routes/equipment-approval.routes.js";
@@ -47,6 +48,8 @@ export function createApp() {
 }
 
 async function buildApp() {
+  validateEnvironment();
+
   // Connect MongoDB first.
   await connectDB();
 

@@ -1,19 +1,20 @@
 
 import { MongoClient } from "mongodb";
 
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  throw new Error("MONGODB_URI is missing");
-}
-
-const client = new MongoClient(uri);
+let client;
 
 export { client };
 
 let db;
 
 export async function connectDB() {
+  const connectionString = process.env.MONGODB_URI;
+
+  if (!connectionString) {
+    throw new Error("MONGODB_URI is missing");
+  }
+
+  client ??= new MongoClient(connectionString);
   await client.connect();
 
   db = client.db(process.env.DB_NAME || "gearnestDB");

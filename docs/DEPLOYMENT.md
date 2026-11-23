@@ -4,13 +4,14 @@
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `PORT` | no | local port (default 5000) |
-| `CLIENT_URL` | yes | frontend origin — CORS allow-list + Better Auth `trustedOrigins` |
-| `MONGODB_URI` | yes | production MongoDB Atlas connection string |
+| `PORT` | no | integer from 1–65535 (default 5000) |
+| `CLIENT_URL` | yes | absolute HTTP(S) frontend origin — CORS allow-list + Better Auth `trustedOrigins` |
+| `MONGODB_URI` | yes | valid `mongodb://` or `mongodb+srv://` connection string |
 | `DB_NAME` | yes | `gearnestDB` |
-| `BETTER_AUTH_URL` | yes | Better Auth public base URL (local `http://localhost:5000`; prod frontend origin) — also the JWT issuer/audience |
-| `BETTER_AUTH_SECRET` | yes | long random string (Better Auth signing secret) |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | for GitHub OAuth | GitHub OAuth application credentials |
+| `BETTER_AUTH_URL` | yes | absolute HTTP(S) Better Auth public base URL (local `http://localhost:5000`; prod frontend origin) — also the JWT issuer/audience |
+| `BETTER_AUTH_SECRET` | yes | random secret of at least 32 bytes (Better Auth signing secret) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | for Google OAuth | Configure both or neither |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | for GitHub OAuth | Configure both or neither |
 | `STRIPE_SECRET_KEY` | for payments | Stripe **test-mode** secret; endpoints answer 503 without it |
 | `STRIPE_WEBHOOK_SECRET` | for payments | `whsec_...` from `stripe listen` / dashboard endpoint |
 | `PAYMENT_SUCCESS_PATH` / `PAYMENT_CANCEL_PATH` | no | frontend redirect paths (defaults `/payment/success`, `/payment/cancel`) |
@@ -18,6 +19,10 @@
 | `CONFIRM_ADMIN_BOOTSTRAP`, `CONFIRM_ADMIN_RECOVERY`, `RECOVER_ADMIN_EMAIL` | scripts only | explicit confirmation for local admin scripts; **never set in the running app** |
 
 `.env` is gitignored (`.env.*` too, except `.env.example`).
+
+At startup the server validates the MongoDB URI, Better Auth secret, optional
+HTTP(S) URLs, OAuth credential pairs, and `PORT`. Errors identify variable
+names only; secret values are never included in validation messages.
 
 ## Local
 

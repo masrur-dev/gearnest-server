@@ -3,11 +3,17 @@
 ## How to run
 
 ```bash
-npm test                 # scripts/smoke-test.js — starts the server if needed
-npm run test:webhook     # scripts/webhook-test.js — signed Stripe webhook fixtures
+npm run test:unit        # isolated unit tests; no database connection
+npm test                 # scripts/smoke-test.js — requires a non-production test database
+npm run test:webhook     # signed Stripe fixtures; requires a non-production test database
 npm run lint             # ESLint over the whole codebase
 npm run build            # syntax-checks every file + imports the app module graph
 ```
+
+The unit-test command explicitly targets `test/*.test.js`; it does not discover
+or execute the database-backed scripts. The smoke and webhook suites create
+temporary records, so point `MONGODB_URI` at a dedicated non-production test
+database before running them.
 
 Optional full admin coverage (requires a known Admin password):
 

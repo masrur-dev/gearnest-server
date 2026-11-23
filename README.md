@@ -23,6 +23,7 @@ Health check: `GET /api/health`
 | `npm start` | Start with node |
 | `npm run setup` | Create MongoDB indexes (`scripts/create-indexes.js`) |
 | `npm test` | Run smoke tests (`scripts/smoke-test.js`) |
+| `npm run test:unit` | Run isolated unit tests (`test/*.test.js`; no database connection) |
 | `npm run test:webhook` | Signed Stripe webhook suite (`scripts/webhook-test.js`, no Stripe account needed) |
 | `npm run lint` | ESLint (flat config, `eslint.config.js`) |
 | `npm run build` | Build check: `node --check` every file + import `app.js`/`api/index.js` |
@@ -64,7 +65,7 @@ Health check: `GET /api/health`
 - **Google login** was not enabled (no OAuth credentials provided).
 - **Stripe runs in test mode.** Without `STRIPE_SECRET_KEY` the checkout endpoint and webhook answer 503; with keys set they work against Stripe test mode, and `npm run test:webhook` verifies the whole webhook contract locally with signed fixtures.
 - **Image upload** stores an image URL (validated `http(s)`) — no file upload/hosting integration, since no image-host credentials were provided.
-- Automated coverage is a smoke-test suite (see [docs/TESTING.md](docs/TESTING.md)); it is not a full unit-test suite.
+- Automated coverage includes isolated unit tests and database-backed smoke/webhook suites (see [docs/TESTING.md](docs/TESTING.md)).
 - No email notifications (booking confirmations, approvals) are sent.
 
 ## Suggested commits
