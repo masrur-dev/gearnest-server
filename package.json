@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "node scripts/smoke-test.js",
+    "test:unit": "node --test test/*.test.js",
     "test:webhook": "node scripts/webhook-test.js",
     "lint": "eslint .",
     "build": "node scripts/build-check.js",

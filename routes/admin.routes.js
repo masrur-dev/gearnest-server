@@ -8,6 +8,10 @@ import {
 } from "../middleware/auth.middleware.js";
 import { toPublicBooking } from "./booking.routes.js";
 import { BOOKING_STATUSES } from "../config/pricing.js";
+import {
+  parsePagination,
+  parsePositiveInteger,
+} from "../config/query-validation.js";
 
 const router = Router();
 
@@ -84,13 +88,24 @@ router.get(
         ];
       }
 
-      const limit = Math.min(
-        100,
-        Math.max(
-          1,
-          Number.parseInt(req.query.limit, 10) || 100
-        )
+      const parsedLimit = parsePositiveInteger(
+        req.query.limit,
+        {
+          name: "limit",
+          defaultValue: 100,
+          maximum: 100,
+          clamp: true,
+        }
       );
+
+      if (parsedLimit.error) {
+        return res.status(400).json({
+          success: false,
+          message: parsedLimit.error,
+        });
+      }
+
+      const limit = parsedLimit.value;
 
       const collection =
         getDB().collection("booking");
@@ -136,18 +151,19 @@ router.get(
 
       const { search = "", role = "" } = req.query;
 
-      const page = Math.max(
-        1,
-        Number.parseInt(req.query.page, 10) || 1
+      const pagination = parsePagination(
+        req.query,
+        { defaultLimit: 50, maxLimit: 100 }
       );
 
-      const limit = Math.min(
-        100,
-        Math.max(
-          1,
-          Number.parseInt(req.query.limit, 10) || 50
-        )
-      );
+      if (pagination.error) {
+        return res.status(400).json({
+          success: false,
+          message: pagination.error,
+        });
+      }
+
+      const { page, limit } = pagination.value;
 
       const filter = {};
 

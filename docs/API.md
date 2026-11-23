@@ -38,7 +38,7 @@ Handled by Better Auth itself (registered before `express.json`): `sign-up/email
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| GET | `/api/equipment` | – | **Approved only.** Query: `search` (name/location), `category`, `rentalType` (Daily/Weekly/Monthly), `availability` (`available`\|`unavailable`), `minPrice`, `maxPrice`, `sort` (`newest`\|`price_asc`\|`price_desc`), `page`, `limit` (max 50). Returns `count,total,page,limit,pages,data`. |
+| GET | `/api/equipment` | – | **Approved only.** Query: `search` (name/location), `category`, `rentalType` (Daily/Weekly/Monthly), `availability` (`available`\|`unavailable`), `minPrice`, `maxPrice`, `sort` (`newest`\|`price_asc`\|`price_desc`), `page` (positive integer), `limit` (positive integer, capped at 50). Malformed or repeated `page`/`limit` values return `400`. Returns `count,total,page,limit,pages,data`. |
 | GET | `/api/equipment/:id` | – | Approved only; `400` on malformed id. |
 
 ## Owner equipment — `/api/owner` (JWT + role `Owner`)
@@ -65,7 +65,7 @@ Categories: `Construction, Photography, Transportation, Agriculture, Electronics
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/users` | Query `search` (name/email), `role`, `page`, `limit` (max 100). |
+| GET | `/users` | Query `search` (name/email), `role`, `page` (positive integer), `limit` (positive integer, capped at 100). Malformed or repeated `page`/`limit` values return `400`. |
 | GET | `/users/:id` | Single user (public projection, no hashes). |
 | PATCH | `/users/:id/role` | Body `{role: Customer\|Owner\|Admin}`. `403` on self-change; `409` if it would demote the last Admin. |
 | GET | `/bookings` | **All bookings, platform-wide.** Query `status` (any booking status), `search` (equipment/customer/owner name or customer email), `limit` (max 100, default 100). Returns `count,total,page`-less payload: `{success,count,total,data[]}` with the same public booking projection as `/api/bookings`. |

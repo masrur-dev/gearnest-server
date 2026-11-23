@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { getDB } from "../config/db.js";
+import { parsePagination } from "../config/query-validation.js";
 
 const router = Router();
 
@@ -139,18 +140,20 @@ router.get("/", async (req, res) => {
         : sortOptions.newest;
 
     // Pagination (defaults keep the original 50 item cap)
-    const pageNum = Math.max(
-      1,
-      Number.parseInt(page, 10) || 1
+    const pagination = parsePagination(
+      { page, limit },
+      { defaultLimit: 50, maxLimit: 50 }
     );
 
-    const limitNum = Math.min(
-      50,
-      Math.max(
-        1,
-        Number.parseInt(limit, 10) || 50
-      )
-    );
+    if (pagination.error) {
+      return res.status(400).json({
+        success: false,
+        message: pagination.error,
+      });
+    }
+
+    const { page: pageNum, limit: limitNum } =
+      pagination.value;
 
     const total = await collection.countDocuments(filter);
 
